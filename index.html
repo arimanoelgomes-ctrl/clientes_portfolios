@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes por Portfólio</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    :root {
+      --bg:           #F0F2F5;
+      --surface:      #FFFFFF;
+      --border:       #E2E8F0;
+      --text:         #1A202C;
+      --text-muted:   #718096;
+      --header-bg:    #1E3A5F;
+      --header-text:  #FFFFFF;
+      --accent:       #2B6CB0;
+
+      --blue:         #2C5282;
+      --blue-light:   #BEE3F8;
+      --blue-bg:      #EBF8FF;
+      --blue-border:  #63B3ED;
+
+      --green:        #276749;
+
+      --radius:       8px;
+      --shadow:       0 1px 3px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-md:    0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== Header ===== */
+    header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 16px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .header-title { display: flex; align-items: center; gap: 10px; }
+    .header-title svg { flex-shrink: 0; }
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+    header h1 span { opacity: 0.7; font-weight: 400; font-size: 0.95rem; margin-left: 8px; }
+
+    /* ===== Main ===== */
+    main {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 20px;
+    }
+
+    /* ===== Upload Section (loading state) ===== */
+    #upload-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 360px;
+    }
+    .loading-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 56px 40px;
+      text-align: center;
+      max-width: 380px;
+      width: 100%;
+      box-shadow: var(--shadow);
+    }
+    .loading-msg { font-size: 0.95rem; color: var(--text-muted); }
+    .loading-msg.error { color: #C53030; }
+
+    /* ===== Buttons ===== */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 20px;
+      border-radius: 7px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: filter 0.15s, transform 0.1s;
+    }
+    .btn:hover { filter: brightness(0.92); }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary   { background: var(--accent); color: #fff; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-export    { background: var(--green); color: #fff; }
+    .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; transform: none; }
+
+    /* ===== File Info Bar ===== */
+    #file-info-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 16px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+    .file-info-left { display: flex; align-items: center; gap: 10px; font-size: 0.875rem; }
+    .file-info-left svg { color: var(--accent); flex-shrink: 0; }
+    #loaded-file-name { font-weight: 600; }
+    .source-tag {
+      background: var(--blue-bg);
+      color: var(--blue);
+      border: 1px solid var(--blue-border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* ===== Totalizadores ===== */
+    #totalizadores { margin-bottom: 20px; }
+    .totais-cards {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border-left: 4px solid transparent;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .card-header { padding: 16px 18px 12px; }
+    .card-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .card-value { font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .card-sub   { font-size: 0.75rem; opacity: 0.75; }
+
+    .total-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 12px 20px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+    .total-bar-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .total-bar-value { font-size: 1.6rem; font-weight: 700; color: var(--blue); line-height: 1; }
+    .total-bar-sep   { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+    .total-bar-sub   { font-size: 0.8rem; color: var(--text-muted); }
+
+    .card-indigo { border-left-color: #4C51BF; background: #F5F3FF; }
+    .card-indigo .card-label, .card-indigo .card-value { color: #4338CA; }
+    .card-indigo .card-sub { color: #4338CA; }
+    .card-indigo .group-bar { background: #EDE9FE; }
+    .card-indigo .group-count { color: #4338CA; }
+
+    .card-orange { border-left-color: #C05621; background: #FFFAF0; }
+    .card-orange .card-label, .card-orange .card-value { color: #C05621; }
+    .card-orange .card-sub { color: #C05621; }
+    .card-orange .group-bar { background: #FEEBC8; }
+    .card-orange .group-count { color: #C05621; }
+
+    .card-green  { border-left-color: #276749; background: #F0FFF4; }
+    .card-green  .card-label, .card-green  .card-value { color: #276749; }
+    .card-green  .card-sub { color: #276749; }
+    .card-green  .group-bar { background: #C6F6D5; }
+    .card-green  .group-count { color: #276749; }
+
+    .card-purple { border-left-color: #6B46C1; background: #FAF5FF; }
+    .card-purple .card-label, .card-purple .card-value { color: #6B46C1; }
+    .card-purple .card-sub { color: #6B46C1; }
+    .card-purple .group-bar { background: #E9D8FD; }
+    .card-purple .group-count { color: #6B46C1; }
+
+    .card-red    { border-left-color: #C53030; background: #FFF5F5; }
+    .card-red    .card-label, .card-red    .card-value { color: #C53030; }
+    .card-red    .card-sub { color: #C53030; }
+    .card-red    .group-bar { background: #FED7D7; }
+    .card-red    .group-count { color: #C53030; }
+
+    .card-list-area {
+      flex: 1;
+      border-top: 1px solid rgba(0,0,0,0.07);
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    .group-list { padding: 4px 0; }
+    .group-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 16px; position: relative; min-height: 32px;
+    }
+    .group-row:hover { filter: brightness(0.97); }
+    .group-bar {
+      position: absolute; left: 0; top: 0; height: 100%;
+      background: var(--blue-bg); z-index: 0;
+      pointer-events: none;
+    }
+    .group-name {
+      flex: 1; font-size: 0.78rem; color: var(--text); z-index: 1;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .group-count {
+      font-weight: 700; font-size: 0.78rem; color: var(--accent);
+      z-index: 1; min-width: 24px; text-align: right; flex-shrink: 0;
+    }
+    .group-empty { padding: 14px; font-size: 0.78rem; color: var(--text-muted); text-align: center; }
+
+    /* ===== Filter Bar ===== */
+    #filter-bar {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      margin-bottom: 16px; box-shadow: var(--shadow);
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .filter-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
+    .filter-group-wide { flex: 2; min-width: 220px; }
+    .filter-group label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+    .filter-group input[type="text"] {
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 10px; font-size: 0.875rem; color: var(--text);
+      background: var(--bg); outline: none; width: 100%;
+    }
+    .filter-group input[type="text"]:focus { border-color: var(--accent); background: #fff; }
+    .filter-group input[type="text"]::placeholder { color: #A0AEC0; }
+    .filter-actions { display: flex; gap: 10px; align-items: center; flex-shrink: 0; padding-bottom: 1px; }
+
+    /* ===== Table ===== */
+    #table-wrapper {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    }
+    .table-scroll { overflow-x: auto; }
+    #data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    #data-table thead tr { background: var(--header-bg); }
+    #data-table thead th {
+      color: #fff; font-weight: 600; font-size: 0.78rem;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 12px 14px; text-align: left; white-space: nowrap; user-select: none;
+    }
+    #data-table thead th:first-child { width: 44px; text-align: center; }
+    th.sortable { cursor: pointer; }
+    th.sortable:hover { background: rgba(255,255,255,0.12); }
+    .sort-icon { margin-left: 4px; font-style: normal; opacity: 0.5; font-size: 0.7rem; }
+    th.sort-asc  .sort-icon::after { content: '↑'; opacity: 1; }
+    th.sort-desc .sort-icon::after { content: '↓'; opacity: 1; }
+    th.sort-asc .sort-icon, th.sort-desc .sort-icon { opacity: 1; }
+
+    #data-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    #data-table tbody tr:last-child { border-bottom: none; }
+    #data-table tbody tr:hover { background: var(--blue-bg); }
+    #data-table tbody td { padding: 11px 14px; vertical-align: middle; }
+    #data-table tbody td:first-child { text-align: center; color: var(--text-muted); font-size: 0.8rem; }
+    .td-municipio { font-weight: 600; }
+    .td-uf { font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.85rem; color: var(--accent); }
+
+    .table-footer {
+      padding: 10px 16px; background: var(--bg);
+      border-top: 1px solid var(--border); font-size: 0.8rem;
+      color: var(--text-muted); display: flex; justify-content: flex-end;
+    }
+    #no-results { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.95rem; }
+
+    /* ===== Footer ===== */
+    footer {
+      text-align: center; padding: 16px; font-size: 0.8rem;
+      color: var(--text-muted); border-top: 1px solid var(--border);
+    }
+
+    /* ===== Toast ===== */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 20px; border-radius: var(--radius);
+      font-size: 0.875rem; font-weight: 600; color: #fff;
+      box-shadow: var(--shadow-md); z-index: 9999;
+      transition: opacity 0.3s, transform 0.3s; max-width: 420px;
+    }
+    #toast.toast-success { background: var(--green); }
+    #toast.toast-error   { background: #C53030; }
+    #toast.toast-info    { background: var(--accent); }
+    #toast.hidden        { opacity: 0; pointer-events: none; transform: translateY(8px); }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 1200px) { .totais-cards { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 800px)  { .totais-cards { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 760px)  { .filter-group { min-width: calc(50% - 12px); } }
+    @media (max-width: 500px)  { .totais-cards { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) {
+      .header-inner { flex-direction: column; align-items: flex-start; }
+      .filter-group { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-title">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <h1>Clientes por Portfólio <span>Listagem e Totalizadores</span></h1>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ====== LOADING SECTION ====== -->
+  <section id="upload-section">
+    <div class="loading-card">
+      <p class="loading-msg" id="loading-msg">Carregando dados da planilha...</p>
+    </div>
+  </section>
+
+  <!-- ====== DASHBOARD SECTION ====== -->
+  <section id="dashboard-section" hidden>
+
+    <!-- File info bar -->
+    <div id="file-info-bar">
+      <div class="file-info-left">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span id="loaded-file-name"></span>
+        <span class="source-tag" id="source-tag"></span>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="refresh-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+        </svg>
+        Atualizar Dados
+      </button>
+    </div>
+
+    <!-- Totalizadores -->
+    <div id="totalizadores">
+
+      <div class="total-bar">
+        <div class="total-bar-label">Total de Municípios</div>
+        <div class="total-bar-sep"></div>
+        <div class="total-bar-value" id="total-municipios">0</div>
+        <div class="total-bar-sub">municípios no resultado atual</div>
+      </div>
+
+      <div class="totais-cards">
+
+        <div class="card card-indigo">
+          <div class="card-header">
+            <div class="card-label">Por Associação</div>
+            <div class="card-value" id="badge-associacao">0</div>
+            <div class="card-sub">associações</div>
+          </div>
+          <div class="card-list-area"><div class="group-list" id="list-associacao"></div></div>
+        </div>
+
+        <div class="card card-orange">
+          <div class="card-header">
+            <div class="card-label">Por Portfólio</div>
+            <div class="card-value" id="badge-portfolio">0</div>
+            <div class="card-sub">portfólios</div>
+          </div>
+          <div class="card-list-area"><div class="group-list" id="list-portfolio"></div></div>
+        </div>
+
+        <div class="card card-green">
+          <div class="card-header">
+            <div class="card-label">Por Consultor Comercial</div>
+            <div class="card-value" id="badge-consultor">0</div>
+            <div class="card-sub">consultores</div>
+          </div>
+          <div class="card-list-area"><div class="group-list" id="list-consultor"></div></div>
+        </div>
+
+        <div class="card card-purple">
+          <div class="card-header">
+            <div class="card-label">Por Coordenador</div>
+            <div class="card-value" id="badge-coordenador">0</div>
+            <div class="card-sub">coordenadores</div>
+          </div>
+          <div class="card-list-area"><div class="group-list" id="list-coordenador"></div></div>
+        </div>
+
+        <div class="card card-red">
+          <div class="card-header">
+            <div class="card-label">Por Tipo de Conta</div>
+            <div class="card-value" id="badge-tipoConta">0</div>
+            <div class="card-sub">tipos de conta</div>
+          </div>
+          <div class="card-list-area"><div class="group-list" id="list-tipoConta"></div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div id="filter-bar">
+      <div class="filter-row">
+        <div class="filter-group filter-group-wide">
+          <label for="global-search">Busca Global (todos os campos)</label>
+          <input type="text" id="global-search" placeholder="Buscar em todos os campos...">
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-secondary btn-sm" id="clear-filters-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Limpar Filtros
+          </button>
+          <button class="btn btn-export btn-sm" id="export-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Exportar CSV
+          </button>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-group"><label>Município</label><input type="text" data-col="municipio" placeholder="Filtrar..."></div>
+        <div class="filter-group"><label>Associação</label><input type="text" data-col="associacao" placeholder="Filtrar..."></div>
+        <div class="filter-group" style="max-width:100px;"><label>UF</label><input type="text" data-col="uf" placeholder="Filtrar..."></div>
+        <div class="filter-group"><label>Tipo de Conta</label><input type="text" data-col="tipoConta" placeholder="Filtrar..."></div>
+        <div class="filter-group"><label>Portfólio</label><input type="text" data-col="portfolio" placeholder="Filtrar..."></div>
+        <div class="filter-group"><label>Consultor Comercial</label><input type="text" data-col="consultor" placeholder="Filtrar..."></div>
+        <div class="filter-group"><label>Coordenador</label><input type="text" data-col="coordenador" placeholder="Filtrar..."></div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div id="table-wrapper">
+      <div class="table-scroll">
+        <table id="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th class="sortable" data-sort="municipio">Município <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="associacao">Associação <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="uf">UF <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="tipoConta">Tipo de Conta <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="portfolio">Portfólio <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="consultor">Consultor Comercial <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="coordenador">Coordenador <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <p id="no-results" hidden>Nenhum registro encontrado para este filtro.</p>
+      <div class="table-footer"><span id="table-count"></span></div>
+    </div>
+
+  </section>
+
+</main>
+
+<footer>Clientes por Portfólio &mdash; 2026</footer>
+<div id="toast" class="hidden"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ===== Column definitions =====
+  const COLUMNS = [
+    { key: 'municipio',  label: 'Município',          normKeys: ['municipio'] },
+    { key: 'associacao', label: 'Associação',          normKeys: ['associacao', 'associação'] },
+    { key: 'uf',         label: 'UF',                  normKeys: ['uf', 'estado', 'uf/estado', 'estado/uf'] },
+    { key: 'tipoConta',  label: 'Tipo de Conta',       normKeys: ['tipo de conta', 'tipoconta', 'tipo'] },
+    { key: 'portfolio',  label: 'Portfólio',           normKeys: ['portfolio', 'portfólio', 'portfoio', 'carteira'] },
+    { key: 'consultor',    label: 'Consultor Comercial', normKeys: ['consultor comercial', 'consultor', 'vendedor'] },
+    { key: 'coordenador', label: 'Coordenador',         normKeys: ['coordenador', 'coordenadora', 'coord'] },
+  ];
+
+  const GAS_URL = 'https://script.google.com/a/macros/betha.com.br/s/AKfycbyLmDaCZvKgA7vJKwATNHUM9FP5bcVKrOhT9veiCrOe-Yza0rbK7-kDuLIjTMP7cMd8cw/exec';
+
+  // ===== State =====
+  const appState = {
+    records:  [],
+    filtered: [],
+    filters:  { global: '', municipio: '', associacao: '', uf: '', tipoConta: '', portfolio: '', consultor: '', coordenador: '' },
+    sort:     { col: null, dir: 'asc' },
+  };
+
+  // ===== DOM refs =====
+  const uploadSection   = document.getElementById('upload-section');
+  const dashSection     = document.getElementById('dashboard-section');
+  const loadingMsg      = document.getElementById('loading-msg');
+  const refreshBtn      = document.getElementById('refresh-btn');
+  const loadedFileName  = document.getElementById('loaded-file-name');
+  const sourceTag       = document.getElementById('source-tag');
+  const filterBar       = document.getElementById('filter-bar');
+  const globalSearch    = document.getElementById('global-search');
+  const clearFiltersBtn = document.getElementById('clear-filters-btn');
+  const exportBtn       = document.getElementById('export-btn');
+  const tableHead       = document.querySelector('#data-table thead');
+  const tableBody       = document.getElementById('table-body');
+  const noResults       = document.getElementById('no-results');
+  const tableCountEl    = document.getElementById('table-count');
+  const toastEl         = document.getElementById('toast');
+  const totalMunicEl    = document.getElementById('total-municipios');
+  const totalizadores   = document.getElementById('totalizadores');
+
+  // ===== Toast =====
+  let toastTimer;
+  function showToast(msg, type = 'info', duration = 4000) {
+    toastEl.textContent = msg;
+    toastEl.className   = `toast-${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.add('hidden'), duration);
+  }
+
+  // ===== Utilities =====
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function normKey(str) {
+    return String(str).trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function debounce(fn, ms) {
+    let t;
+    return function (...a) { clearTimeout(t); t = setTimeout(() => fn.apply(this, a), ms); };
+  }
+
+  // ===== Parse / Normalize =====
+  function buildNormMap() {
+    const map = {};
+    COLUMNS.forEach(col => col.normKeys.forEach(nk => { map[nk] = col.key; }));
+    return map;
+  }
+
+  function normalizeRows(rows) {
+    if (!rows.length) return [];
+    const normMap = buildNormMap();
+    const keyMap  = {};
+    Object.keys(rows[0]).forEach(raw => {
+      const nk = normKey(raw);
+      if (normMap[nk]) keyMap[raw] = normMap[nk];
+    });
+    const found   = new Set(Object.values(keyMap));
+    const missing = COLUMNS.map(c => c.key).filter(k => !found.has(k));
+    if (missing.length) {
+      const labels   = missing.map(k => COLUMNS.find(c => c.key === k).label).join('", "');
+      const foundKeys = Object.keys(rows[0]).join(', ');
+      throw new Error(`Colunas não encontradas: "${labels}"\nColunas na planilha: ${foundKeys}`);
+    }
+    return rows
+      .map(row => {
+        const out = {};
+        Object.entries(row).forEach(([k, v]) => { if (keyMap[k]) out[keyMap[k]] = String(v).trim(); });
+        return out;
+      })
+      .filter(r => r.municipio && r.municipio !== '');
+  }
+
+  function loadRecords(normalized) {
+    if (!normalized.length) { showLoadError('Nenhum dado encontrado na planilha.'); return; }
+    appState.records = normalized;
+    appState.filters = { global: '', municipio: '', associacao: '', uf: '', tipoConta: '', portfolio: '', consultor: '', coordenador: '' };
+    appState.sort    = { col: null, dir: 'asc' };
+    loadedFileName.textContent = 'Clientes por Portfólio';
+    sourceTag.textContent      = 'Google Sheets';
+    clearAllInputs();
+    applyFilterAndSort();
+    uploadSection.hidden = true;
+    dashSection.hidden   = false;
+    showToast(`${normalized.length} registros carregados!`, 'success');
+  }
+
+  // ===== GOOGLE SHEETS (Apps Script via JSONP) =====
+  function fetchJsonp(url) {
+    return new Promise((resolve, reject) => {
+      const cbName  = '_gas_cb_' + Date.now();
+      const script  = document.createElement('script');
+      const cleanup = () => { delete window[cbName]; script.remove(); };
+
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error('Tempo esgotado ao carregar a planilha.'));
+      }, 20000);
+
+      window[cbName] = (data) => {
+        clearTimeout(timer);
+        cleanup();
+        resolve(data);
+      };
+
+      script.onerror = () => {
+        clearTimeout(timer);
+        cleanup();
+        reject(new Error('Não foi possível acessar a planilha. Verifique se você está logado na conta Google da organização neste navegador.'));
+      };
+
+      script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+      document.head.appendChild(script);
+    });
+  }
+
+  function showLoadError() {
+    loadingMsg.textContent = 'Não foi possível carregar os dados. Atualize a página para tentar novamente.';
+    loadingMsg.classList.add('error');
+  }
+
+  async function loadFromGas() {
+    loadingMsg.textContent = 'Carregando dados da planilha...';
+    loadingMsg.classList.remove('error');
+    uploadSection.hidden = false;
+    dashSection.hidden   = true;
+    try {
+      const rows = await fetchJsonp(GAS_URL);
+      if (!Array.isArray(rows)) throw new Error('Resposta inesperada do servidor.');
+      loadRecords(normalizeRows(rows));
+    } catch (err) {
+      showLoadError();
+      console.error(err);
+    }
+  }
+
+  loadFromGas();
+
+  // ===== Filter and Sort =====
+  function countUniqueMunicipiosByGroup(records, groupKey) {
+    const map = new Map();
+    records.forEach(r => {
+      const g = r[groupKey] || '(sem valor)';
+      if (!map.has(g)) map.set(g, new Set());
+      map.get(g).add(r.municipio);
+    });
+    return Array.from(map.entries())
+      .map(([name, set]) => ({ name, count: set.size }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'pt-BR'));
+  }
+
+  function renderGroupList(listEl, badgeEl, data) {
+    badgeEl.textContent = data.length;
+    if (!data.length) { listEl.innerHTML = '<p class="group-empty">Sem dados</p>'; return; }
+    const maxCount = data[0].count;
+    const frag = document.createDocumentFragment();
+    data.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'group-row';
+      const pct = maxCount > 0 ? (item.count / maxCount * 100).toFixed(1) : 0;
+      row.innerHTML = `<div class="group-bar" style="width:${pct}%"></div><span class="group-name">${escHtml(item.name)}</span><span class="group-count">${item.count}</span>`;
+      frag.appendChild(row);
+    });
+    listEl.innerHTML = '';
+    listEl.appendChild(frag);
+  }
+
+  function renderTotalizadores() {
+    const f = appState.filtered;
+    totalMunicEl.textContent = new Set(f.map(r => r.municipio)).size;
+    renderGroupList(document.getElementById('list-associacao'), document.getElementById('badge-associacao'), countUniqueMunicipiosByGroup(f, 'associacao'));
+    renderGroupList(document.getElementById('list-portfolio'),  document.getElementById('badge-portfolio'),  countUniqueMunicipiosByGroup(f, 'portfolio'));
+    renderGroupList(document.getElementById('list-consultor'),    document.getElementById('badge-consultor'),    countUniqueMunicipiosByGroup(f, 'consultor'));
+    renderGroupList(document.getElementById('list-coordenador'),  document.getElementById('badge-coordenador'),  countUniqueMunicipiosByGroup(f, 'coordenador'));
+    renderGroupList(document.getElementById('list-tipoConta'),    document.getElementById('badge-tipoConta'),    countUniqueMunicipiosByGroup(f, 'tipoConta'));
+  }
+
+  function applyFilterAndSort() {
+    let result = appState.records;
+    const g = appState.filters.global.toLowerCase();
+    if (g) result = result.filter(r => COLUMNS.some(col => (r[col.key] || '').toLowerCase().includes(g)));
+    COLUMNS.forEach(col => {
+      const term = (appState.filters[col.key] || '').toLowerCase();
+      if (term) result = result.filter(r => (r[col.key] || '').toLowerCase().includes(term));
+    });
+    const { col, dir } = appState.sort;
+    if (col) {
+      result = [...result].sort((a, b) => {
+        const cmp = (a[col] || '').localeCompare(b[col] || '', 'pt-BR', { sensitivity: 'base' });
+        return dir === 'asc' ? cmp : -cmp;
+      });
+    }
+    appState.filtered = result;
+    renderTotalizadores();
+    renderTable();
+    renderTableCount();
+  }
+
+  function handleSortClick(colKey) {
+    if (appState.sort.col === colKey) {
+      appState.sort.dir = appState.sort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      appState.sort.col = colKey;
+      appState.sort.dir = 'asc';
+    }
+    applyFilterAndSort();
+    updateSortIndicators();
+  }
+
+  function updateSortIndicators() {
+    tableHead.querySelectorAll('th[data-sort]').forEach(th => {
+      th.classList.remove('sort-asc', 'sort-desc');
+      if (th.dataset.sort === appState.sort.col)
+        th.classList.add(appState.sort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+    });
+  }
+
+  function renderTable() {
+    tableBody.innerHTML = '';
+    const rows = appState.filtered;
+    if (!rows.length) { noResults.hidden = false; return; }
+    noResults.hidden = true;
+    const frag = document.createDocumentFragment();
+    rows.forEach((r, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${idx + 1}</td><td class="td-municipio">${escHtml(r.municipio)}</td><td>${escHtml(r.associacao)}</td><td class="td-uf">${escHtml(r.uf)}</td><td>${escHtml(r.tipoConta)}</td><td>${escHtml(r.portfolio)}</td><td>${escHtml(r.consultor)}</td><td>${escHtml(r.coordenador)}</td>`;
+      frag.appendChild(tr);
+    });
+    tableBody.appendChild(frag);
+  }
+
+  function renderTableCount() {
+    const total    = appState.records.length;
+    const filtered = appState.filtered.length;
+    tableCountEl.textContent = filtered === total
+      ? `${total} registro${total !== 1 ? 's' : ''}`
+      : `${filtered} de ${total} registros`;
+  }
+
+  function exportCsv() {
+    if (!appState.filtered.length) { showToast('Nenhum dado para exportar.', 'error'); return; }
+    const header = COLUMNS.map(c => c.label).join(';');
+    const lines  = [header, ...appState.filtered.map(r =>
+      COLUMNS.map(c => `"${(r[c.key] || '').replace(/"/g, '""')}"`).join(';')
+    )];
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `clientes-portfolio-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`${appState.filtered.length} registros exportados!`, 'success');
+  }
+
+  function clearAllInputs() {
+    globalSearch.value = '';
+    filterBar.querySelectorAll('input[data-col]').forEach(inp => { inp.value = ''; });
+  }
+
+  function clearAllFilters() {
+    appState.filters = { global: '', municipio: '', associacao: '', uf: '', tipoConta: '', portfolio: '', consultor: '', coordenador: '' };
+    clearAllInputs();
+    applyFilterAndSort();
+  }
+
+  const debouncedApply = debounce(applyFilterAndSort, 150);
+
+  // ===== Events =====
+  refreshBtn.addEventListener('click', loadFromGas);
+  filterBar.addEventListener('input', e => {
+    if (e.target.id === 'global-search') appState.filters.global = e.target.value;
+    else if (e.target.dataset.col) appState.filters[e.target.dataset.col] = e.target.value;
+    debouncedApply();
+  });
+  clearFiltersBtn.addEventListener('click', clearAllFilters);
+  tableHead.addEventListener('click', e => { const th = e.target.closest('th[data-sort]'); if (th) handleSortClick(th.dataset.sort); });
+  exportBtn.addEventListener('click', exportCsv);
+
+})();
+</script>
+</body>
+</html>
