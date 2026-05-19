@@ -450,6 +450,7 @@
         <div class="filter-group"><label>Portfólio</label><input type="text" data-col="portfolio" placeholder="Filtrar..."></div>
         <div class="filter-group"><label>Consultor Comercial</label><input type="text" data-col="consultor" placeholder="Filtrar..."></div>
         <div class="filter-group"><label>Coordenador</label><input type="text" data-col="coordenador" placeholder="Filtrar..."></div>
+        <div class="filter-group"><label>Analista de CS</label><input type="text" data-col="analistaCs" placeholder="Filtrar..."></div>
       </div>
     </div>
 
@@ -467,6 +468,7 @@
               <th class="sortable" data-sort="portfolio">Portfólio <span class="sort-icon"></span></th>
               <th class="sortable" data-sort="consultor">Consultor Comercial <span class="sort-icon"></span></th>
               <th class="sortable" data-sort="coordenador">Coordenador <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="analistaCs">Analista de CS <span class="sort-icon"></span></th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
@@ -496,6 +498,7 @@
     { key: 'portfolio',  label: 'Portfólio',           normKeys: ['portfolio', 'portfólio', 'portfoio', 'carteira'] },
     { key: 'consultor',    label: 'Consultor Comercial', normKeys: ['consultor comercial', 'consultor', 'vendedor'] },
     { key: 'coordenador', label: 'Coordenador',         normKeys: ['coordenador', 'coordenadora', 'coord'] },
+    { key: 'analistaCs',  label: 'Analista de CS',      normKeys: ['analista de cs', 'analista cs', 'analistacs', 'cs', 'analista'] },
   ];
 
   const GAS_URL = 'https://script.google.com/a/macros/betha.com.br/s/AKfycbyLmDaCZvKgA7vJKwATNHUM9FP5bcVKrOhT9veiCrOe-Yza0rbK7-kDuLIjTMP7cMd8cw/exec';
@@ -587,7 +590,7 @@
   function loadRecords(normalized) {
     if (!normalized.length) { showLoadError('Nenhum dado encontrado na planilha.'); return; }
     appState.records = normalized;
-    appState.filters = { global: '', municipio: '', associacao: '', uf: '', tipoConta: '', portfolio: '', consultor: '', coordenador: '' };
+    appState.filters = { global: '', municipio: '', associacao: '', uf: '', tipoConta: '', portfolio: '', consultor: '', coordenador: '', analistaCs: '' };
     appState.sort    = { col: null, dir: 'asc' };
     loadedFileName.textContent = 'Clientes por Portfólio';
     sourceTag.textContent      = 'Google Sheets';
@@ -772,7 +775,7 @@
   }
 
   function clearAllFilters() {
-    appState.filters = { global: '', municipio: '', associacao: '', uf: '', tipoConta: '', portfolio: '', consultor: '', coordenador: '' };
+    appState.filters = { global: '', municipio: '', associacao: '', uf: '', tipoConta: '', portfolio: '', consultor: '', coordenador: '', analistaCs: '' };
     clearAllInputs();
     applyFilterAndSort();
   }
