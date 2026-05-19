@@ -739,7 +739,7 @@
     const frag = document.createDocumentFragment();
     rows.forEach((r, idx) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${idx + 1}</td><td class="td-municipio">${escHtml(r.municipio)}</td><td>${escHtml(r.associacao)}</td><td class="td-uf">${escHtml(r.uf)}</td><td>${escHtml(r.tipoConta)}</td><td>${escHtml(r.portfolio)}</td><td>${escHtml(r.consultor)}</td><td>${escHtml(r.coordenador)}</td>`;
+      tr.innerHTML = `<td>${idx + 1}</td><td class="td-municipio">${escHtml(r.municipio)}</td><td>${escHtml(r.associacao)}</td><td class="td-uf">${escHtml(r.uf)}</td><td>${escHtml(r.tipoConta)}</td><td>${escHtml(r.portfolio)}</td><td>${escHtml(r.consultor)}</td><td>${escHtml(r.coordenador)}</td><td>${escHtml(r.analistaCs || '')}</td>`;
       frag.appendChild(tr);
     });
     tableBody.appendChild(frag);
