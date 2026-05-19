@@ -135,7 +135,7 @@
     #totalizadores { margin-bottom: 20px; }
     .totais-cards {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 14px;
     }
     .card {
@@ -198,6 +198,12 @@
     .card-red    .card-sub { color: #C53030; }
     .card-red    .group-bar { background: #FED7D7; }
     .card-red    .group-count { color: #C53030; }
+
+    .card-teal   { border-left-color: #2C7A7B; background: #E6FFFA; }
+    .card-teal   .card-label, .card-teal   .card-value { color: #2C7A7B; }
+    .card-teal   .card-sub { color: #2C7A7B; }
+    .card-teal   .group-bar { background: #B2F5EA; }
+    .card-teal   .group-count { color: #2C7A7B; }
 
     .card-list-area {
       flex: 1;
@@ -413,6 +419,15 @@
             <div class="card-sub">tipos de conta</div>
           </div>
           <div class="card-list-area"><div class="group-list" id="list-tipoConta"></div></div>
+        </div>
+
+        <div class="card card-teal">
+          <div class="card-header">
+            <div class="card-label">Por Analista de CS</div>
+            <div class="card-value" id="badge-analistaCs">0</div>
+            <div class="card-sub">analistas</div>
+          </div>
+          <div class="card-list-area"><div class="group-list" id="list-analistaCs"></div></div>
         </div>
 
       </div>
@@ -686,9 +701,10 @@
     totalMunicEl.textContent = new Set(f.map(r => r.municipio)).size;
     renderGroupList(document.getElementById('list-associacao'), document.getElementById('badge-associacao'), countUniqueMunicipiosByGroup(f, 'associacao'));
     renderGroupList(document.getElementById('list-portfolio'),  document.getElementById('badge-portfolio'),  countUniqueMunicipiosByGroup(f, 'portfolio'));
-    renderGroupList(document.getElementById('list-consultor'),    document.getElementById('badge-consultor'),    countUniqueMunicipiosByGroup(f, 'consultor'));
-    renderGroupList(document.getElementById('list-coordenador'),  document.getElementById('badge-coordenador'),  countUniqueMunicipiosByGroup(f, 'coordenador'));
-    renderGroupList(document.getElementById('list-tipoConta'),    document.getElementById('badge-tipoConta'),    countUniqueMunicipiosByGroup(f, 'tipoConta'));
+    renderGroupList(document.getElementById('list-consultor'),  document.getElementById('badge-consultor'),  countUniqueMunicipiosByGroup(f, 'consultor'));
+    renderGroupList(document.getElementById('list-coordenador'),document.getElementById('badge-coordenador'),countUniqueMunicipiosByGroup(f, 'coordenador'));
+    renderGroupList(document.getElementById('list-tipoConta'),  document.getElementById('badge-tipoConta'),  countUniqueMunicipiosByGroup(f, 'tipoConta'));
+    renderGroupList(document.getElementById('list-analistaCs'), document.getElementById('badge-analistaCs'), countUniqueMunicipiosByGroup(f, 'analistaCs'));
   }
 
   function applyFilterAndSort() {
